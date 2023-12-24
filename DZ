@@ -7,14 +7,17 @@ chat = GigaChat(
     verify_ssl_certs=False)
 holiday = input("Введите праздник, с которым надо поздравить\n")
 name = input("Введите имя поздравляемого\n")
+sex = (input("Введите пол(м/ж)")).lower
 age = input("Введите возраст человека\n")
 prof = input("Введите профессию человека\n")
 hobby = input("Введите хобби человека\n")
 creature = input("В чьем стиле хотите поздравить?\n")
 
 
-
-text_ok = f"Создай поздравление с {holiday} в прозе в стиле {creature} для {name} {age} лет, который {prof} и увлекается {hobby}."
+if sex =='м':
+    text_ok = f"Создай поздравление с {holiday} в прозе в стиле {creature} для {name} {age} лет, который {prof} и увлекается {hobby}."
+else:
+    text_ok = f"Создай поздравление с {holiday} в прозе в стиле {creature} для {name} {age} лет, которая {prof} и увлекается {hobby}."
 prompt = SystemMessage(content=text_ok)
 result = chat([prompt])
 print(result.content)
