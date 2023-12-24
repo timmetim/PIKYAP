@@ -1,0 +1,124 @@
+import sqlite3
+import time
+
+# Создаем базу данных и устанавливаем соединение
+conn = sqlite3.connect('passwords.db')
+cursor = conn.cursor()
+
+# Создаем таблицу для паролей
+cursor.execute('''CREATE TABLE IF NOT EXISTS passwords
+                (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER,
+                password TEXT)''')
+
+# Закрываем соединение с базой данных
+conn.close()
+
+import telebot
+import sqlite3
+
+bot = telebot.TeleBot("6813625764:AAHvU-oxWkdUg1ulnbwEiZzYWF_DzObIODY")
+
+@bot.message_handler(commands=['start'])
+def add_password(message):
+    # Запрашиваем у пользователя данные для добавления пароля
+
+    sent_message = bot.send_message(message.chat.id, "вы можете выполгить следующие команды: 1) добавить пароль (/addpassword)\n 2)посмотреть пароль(/viewpassword) \n 3)изменить пароль(/changepassword)")
+    bot.delete_message(message.chat.id, message.id)
+    time.sleep(15)
+    bot.delete_message(message.chat.id, sent_message.message_id)
+# Команда для добавления пароля
+@bot.message_handler(commands=['addpassword'])
+def add_password(message):
+    # Запрашиваем у пользователя данные для добавления пароля
+    sent_message =bot.send_message(message.chat.id, "Введите пароль:")
+    bot.register_next_step_handler(message, save_password)
+    bot.delete_message(message.chat.id, message.id)
+    time.sleep(60)
+    bot.delete_message(message.chat.id, sent_message.message_id)
+
+
+
+def save_password(message):
+    # Сохраняем пароль в базе данных
+    password = message.text
+    user_id = message.from_user.id
+    conn = sqlite3.connect('passwords.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT password FROM passwords WHERE user_id=?", (user_id,))
+    result = cursor.fetchone()
+
+    if result is  not None:
+        sent_message = bot.send_message(message.chat.id, "У вас уже есть сохраненный пароль")
+        bot.delete_message(message.chat.id, message.message_id)
+        time.sleep(10)
+        bot.delete_message(message.chat.id, sent_message.message_id)
+
+    else:
+
+
+        cursor.execute("INSERT INTO passwords (user_id, password) VALUES (?, ?)", (user_id, password))
+        conn.commit()
+        conn.close()
+        sent_message = bot.send_message(message.chat.id, "Пароль успешно сохранен!")
+        bot.delete_message(message.chat.id, message.id)
+        time.sleep(10)
+        bot.delete_message(message.chat.id, sent_message.message_id)
+
+
+# Команда для просмотра пароля
+@bot.message_handler(commands=['viewpassword'])
+def view_password(message):
+    # Получаем пароль из базы данных
+    user_id = message.from_user.id
+    conn = sqlite3.connect('passwords.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT password FROM passwords WHERE user_id=?", (user_id,))
+    result = cursor.fetchone()
+    conn.close()
+    bot.delete_message(message.chat.id, message.message_id)
+
+    # Отправляем пользователю его пароль
+    if result is not None:
+        password = result[0]
+        sent_message = bot.send_message(message.chat.id, f"Ваш пароль: {password}")
+        time.sleep(120)
+        bot.delete_message(message.chat.id, sent_message.message_id)
+    else:
+        sent_message = bot.send_message(message.chat.id, "У вас нет сохраненного пароля")
+        time.sleep(10)
+        bot.delete_message(message.chat.id, sent_message.message_id)
+
+# Команда для изменения пароля
+@bot.message_handler(commands=['changepassword'])
+def change_password(message):
+    # Запрашиваем у пользователя новый пароль
+    sent_message = bot.send_message(message.chat.id, "Введите новый пароль:")
+    bot.register_next_step_handler(message, update_password)
+    bot.delete_message(message.chat.id, message.message_id)
+    time.sleep(30)
+    bot.delete_message(message.chat.id, sent_message.message_id)
+
+def update_password(message):
+    # Обновляем пароль в базе данных
+    new_password = message.text
+    user_id = message.from_user.id
+    bot.delete_message(message.chat.id, message.message_id)
+    conn = sqlite3.connect('passwords.db')
+    cursor = conn.cursor()
+    cursor.execute("UPDATE passwords SET password=? WHERE user_id=?", (new_password, user_id))
+
+
+    conn.commit()
+    conn.close()
+    sent_message = bot.send_message(message.chat.id, "Пароль успешно изменен!")
+    time.sleep(10)
+    bot.delete_message(message.chat.id, sent_message.message_id)
+
+
+
+
+
+# Запуск бота
+bot.polling()
+
